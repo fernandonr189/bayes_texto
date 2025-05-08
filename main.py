@@ -36,20 +36,48 @@ def get_conditional_probability(text: str, word_count: dict[str, int]) -> dict[s
 
     return combinations_probability
 
-def suggest_word(probabilities: dict[str, dict[str, float]], previous_word: str, initial_char: str) -> str | None:
-    if previous_word not in probabilities:
-        return None
+def suggest_word(text: str, char: str) -> str | None:
 
-    candidates = {
-        word: prob
-        for word, prob in probabilities[previous_word].items()
-        if word.startswith(initial_char)
-    }
+    word_count = count_words(text)
 
-    if not candidates:
-        return None
+    possible_words = [word for word, count in word_count.items() if word.startswith(char)]
 
-    return max(candidates, key=lambda k: candidates[k])
+    probabilities: dict[str, float] = {} # P(Ai)
+
+    total_words = sum(word_count.values())
+
+    total_words_with_char = 0
+    for word in text.split():
+        if word.startswith(char):
+            total_words_with_char += 1
+
+    probability_of_word_with_char = total_words_with_char / total_words # P(B)
+
+    for word in possible_words:
+        probabilities[word] = word_count[word] / total_words
+
+    # P(char|word) = 1
+
+    bayes_probabilities: dict[str, float] = {} # P(A|B)
+    for word in possible_words:
+        bayes_probabilities[word] = probabilities[word] / probability_of_word_with_char
+
+    print(bayes_probabilities)
+
+    return None
+
+
+
+# Eventos
+# A = la palabra es este
+# A2 = la palabra es en
+# An = la palabra es e*
+# B = la letra es e
+# P(A|B) = P(B|A) * P(A) / P(B)
+# P(este | e) = P(e | este) * P(este) / P(e)
+# P(A) = (apariciones de la palabra) / total de palabras
+# P(B) = (apariciones de la letra) / total de letras
+# P(e | este) = 1 * P(este) / P(e)
 
 if __name__ == "__main__":
     phrase = open_file("frase.txt")
@@ -58,10 +86,6 @@ if __name__ == "__main__":
     print(f'frase normalizada:\n{phrase}\n')
     words_count = count_words(phrase)
     print(f'Conteo de palabras:\n{words_count}\n')
-    combinations_probability = get_conditional_probability(phrase, words_count)
-    print(f'Probabilidades condicionales:\n{combinations_probability}\n')
-    target_word = 'en'
-    palabras_despues_de_en = combinations_probability.get(target_word, {})
-    print(f'Probabilidades condicionales despues de "{target_word}":\n{palabras_despues_de_en}\n')
-    palabra_sugerida = suggest_word(combinations_probability, target_word, 'b')
-    print(f'Palabra sugerida despues de "{target_word}" con letra inicial "b": {palabra_sugerida}\n')
+    print("Introduzca una letra:")
+    char = input()
+    suggest_word(phrase, char)
